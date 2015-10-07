@@ -453,9 +453,19 @@ class StrategyMultiObjective(object):
             ref = numpy.array([ind.fitness.wvalues for ind in candidates]) * -1
             ref = numpy.max(ref, axis=0) + 1
 
-            for i in range(len(mid_front) - k):
-                idx = self.indicator(mid_front, ref=ref)
-                not_chosen.append(mid_front.pop(idx))
+            numRemove = len(mid_front)-k
+            while numRemove>0:
+                idxRemove = self.indicator(mid_front, ref=ref, numRemove=numRemove)
+                if isinstance(idxRemove, (list, numpy.ndarray)):
+                    # remove worst solutions in one-shot
+                    setRemove=set(idxRemove)
+                    not_chosen += [mid_front[i] for i in setRemove]
+                    mid_front = [ind for i,ind in enumerate(mid_front) if not i in setRemove]
+                else:
+                    # remove worst solutions iteratively (one-by-one)
+                    idx = self.indicator(mid_front, ref=ref)
+                    not_chosen.append(mid_front.pop(idx))
+                numRemove = len(mid_front)-k
 
             chosen += mid_front
 

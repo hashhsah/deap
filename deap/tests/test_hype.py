@@ -95,7 +95,7 @@ class TestHypE(unittest.TestCase):
 
     def testSampledSpeed(self):
 
-        for M,N in [(2,20), (2, 100), (3,100), (5, 100), (10, 100), (20, 100), (30, 100), (50, 100)]:
+        for M,N in [(2,20), (2, 100), (3,100), (5, 100), (10, 100), (20, 100)]:
             for k in [1,2,10]:
                 front = _mkRandDTLZ2Front(N,M)
                 ref   = np.ones((M,))

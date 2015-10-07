@@ -31,9 +31,6 @@ from deap import tools
 FITCLSNAME = "FIT_TYPE"
 INDCLSNAME = "IND_TYPE"
 
-HV_THRESHOLD = 119.0
-
-    
 def setup_func_single_obj():
     creator.create(FITCLSNAME, base.Fitness, weights=(-1.0,))
     creator.create(INDCLSNAME, list, fitness=creator.__dict__[FITCLSNAME])
@@ -42,8 +39,8 @@ def setup_func_multi_obj():
     creator.create(FITCLSNAME, base.Fitness, weights=(-1.0, -1.0))
     creator.create(INDCLSNAME, list, fitness=creator.__dict__[FITCLSNAME])
 
-def setup_func_multi_obj_numpy():
-    creator.create(FITCLSNAME, base.Fitness, weights=(-1.0, -1.0))
+def setup_func_multi_obj_numpy(M=2):
+    creator.create(FITCLSNAME, base.Fitness, weights=[-1.0]*M)
     creator.create(INDCLSNAME, numpy.ndarray, fitness=creator.__dict__[FITCLSNAME])
 
 def teardown_func():
@@ -112,12 +109,10 @@ def test_nsga2():
 
     hv = hypervolume(pop, [11.0, 11.0])
     # hv = 120.777 # Optimal value
-
+    HV_THRESHOLD = pow(11.0, 2)-2
     assert hv > HV_THRESHOLD, "Hypervolume is lower than expected %f < %f" % (hv, HV_THRESHOLD)
 
-@unittest.skipIf(platform.python_implementation() == "PyPy", "PyPy has no support for eigen decomposition.")
-@with_setup(setup_func_multi_obj_numpy, teardown_func)
-def test_mo_cma_es():
+def _test_mo_cma_es(N, M):
 
     def distance(feasible_ind, original_ind):
         """A distance function to the feasability region."""
@@ -136,22 +131,23 @@ def test_mo_cma_es():
             return False
         return True
 
-    NDIM = 5
     BOUND_LOW, BOUND_UP = 0.0, 1.0
-    MU, LAMBDA = 10, 10
+    MU, LAMBDA = 20,20
     NGEN = 500
 
+    setup_func_multi_obj_numpy(M)
+
     # The MO-CMA-ES algorithm takes a full population as argument
-    population = [creator.__dict__[INDCLSNAME](x) for x in numpy.random.uniform(BOUND_LOW, BOUND_UP, (MU, NDIM))]
+    population = [creator.__dict__[INDCLSNAME](x) for x in numpy.random.uniform(BOUND_LOW, BOUND_UP, (MU, N))]
 
     toolbox = base.Toolbox()
-    toolbox.register("evaluate", benchmarks.zdt1)
+    toolbox.register("evaluate", lambda ind: benchmarks.dtlz2(ind, M))
     toolbox.decorate("evaluate", tools.ClosestValidPenality(valid, closest_feasible, 1.0e-6, distance))
 
     for ind in population:
         ind.fitness.values = toolbox.evaluate(ind)
 
-    strategy = cma.StrategyMultiObjective(population, sigma=1.0, mu=MU, lambda_=LAMBDA)
+    strategy = cma.StrategyMultiObjective(population, sigma=1.0, mu=MU, lambda_=LAMBDA, indicator=tools.hypervolumeEstX)
     
     toolbox.register("generate", strategy.generate, creator.__dict__[INDCLSNAME])
     toolbox.register("update", strategy.update)
@@ -168,5 +164,14 @@ def test_mo_cma_es():
         # Update the strategy with the evaluated individuals
         toolbox.update(population)
     
-    hv = hypervolume(strategy.parents, [11.0, 11.0])
+    hv = hypervolume(strategy.parents, [11.0]*M)
+    HV_THRESHOLD = pow(11.0, M) -2
     assert hv > HV_THRESHOLD, "Hypervolume is lower than expected %f < %f" % (hv, HV_THRESHOLD)
+
+    teardown_func()
+
+@unittest.skipIf(platform.python_implementation() == "PyPy", "PyPy has no support for eigen decomposition.")
+def test_mo_cma_es():
+    _test_mo_cma_es(N=5, M=2)
+    _test_mo_cma_es(N=5, M=4)
+

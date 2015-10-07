@@ -23,6 +23,8 @@ except ImportError:
     # fallback on python version
     from ._hypervolume import pyhv as hv
 
+from ._hypervolume.hype import hypeIndicatorSampled, hypeIndicatorExact
+
 def hypervolume(front, **kargs):
     """Returns the index of the individual with the least the hypervolume
     contribution. The provided *front* should be a set of non-dominated
@@ -89,6 +91,28 @@ def multiplicative_epsilon(front, **kargs):
     # Select the minimum contribution value
     return numpy.argmin(contrib_values)
 
+def hypervolumeEst(front, **kargs):
+    wobj       = numpy.array([ind.fitness.wvalues for ind in front]) * -1
+    ref        = kargs.get("ref", None)
+    k          = kargs.get("numRemove", 1)
+    dimThresh  = kargs.get("dimThresh", 4)
+    nrOfSamples= kargs.get("sizeSample", 100000)
 
+    N,M = numpy.shape(wobj)
+    if M >= dimThresh:
+        h = hypeIndicatorSampled(wobj, k, ref, nrOfSamples)
+    else:
+        h = hypeIndicatorExact(wobj, k, ref)
+    return numpy.argsort(h)[:k]
+hypervolumeEst.oneShot = True
 
-__all__ = ["hypervolume", "additive_epsilon", "multiplicative_epsilon"]
+def hypervolumeEstX(front, **kargs):
+    dimThresh  = kargs.pop("dimThresh", 4)
+    M = len(front[0].fitness.wvalues)
+
+    if M >= dimThresh:
+        return hypervolumeEst(front, dimThresh=dimThresh, **kargs)
+    else:
+        return hypervolume(front, **kargs)
+
+__all__ = ["hypervolume", "additive_epsilon", "multiplicative_epsilon", "hypervolumeEst", "hypervolumeEstX"]
