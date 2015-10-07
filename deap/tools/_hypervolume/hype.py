@@ -68,7 +68,7 @@ def hypeIndicatorSampled(points, k, ref=None, nrOfSamples=10000):
     else:           BoxU = ref
 
     # generate a random sample uniformly distributed between BoxL and ref
-    S = np.random.random((nrOfSamples,dim)) * (ref-BoxL) + BoxL
+    S = np.random.random((nrOfSamples,dim)) * (BoxU-BoxL) + BoxL
 
     # number of points in the front that dominate each sample point
     dominated = np.zeros((nrOfSamples,),dtype='int')
@@ -104,6 +104,8 @@ def hypeIndicatorExact(points, k, ref=None):
     :rtype:             np.ndarray(N,)
     '''
 
+    if ref is None:
+        ref = np.max(points, 0)
     nrP, dim = np.shape(points)
 
     alpha = np.zeros((nrP,))
