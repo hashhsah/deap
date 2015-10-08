@@ -92,6 +92,17 @@ def multiplicative_epsilon(front, **kargs):
     return numpy.argmin(contrib_values)
 
 def hypervolumeEst(front, **kargs):
+    """Return the indices of numRemove individuals with the least hypervolume
+    contributions, as calculated by the HypE algorithm.
+
+    :rtype:             numpy.ndarray
+    :param  front:      a set of non-dominated individuals
+                        having each a :attr:`fitness` attribute.
+    :param  numRemove:  number of least important individuals to be removed
+    :param  dimThresh:  threshold of objective dimensions, above which (inclusive) the 
+                        Monte-Carlo estimation will be used.
+    :param  nrOfSamples: sample size in case of Monte-Carlo algorithm being used
+    """
     wobj       = numpy.array([ind.fitness.wvalues for ind in front]) * -1
     ref        = kargs.get("ref", None)
     k          = kargs.get("numRemove", 1)
@@ -104,9 +115,19 @@ def hypervolumeEst(front, **kargs):
     else:
         h = hypeIndicatorExact(wobj, k, ref)
     return numpy.argsort(h)[:k]
-hypervolumeEst.oneShot = True
 
 def hypervolumeEstX(front, **kargs):
+    """Return the indices of numRemove individuals with the least hypervolume
+    contributions.
+    
+    For small number of objectives, the standard hypervolume
+    algorithm is used, otherwise the HypE Monte-Carlo estimation is used.
+    In the former case, only one index is returned. In the latter, a list
+    of indices is returned.
+
+    :rtype:             int or numpy.ndarray
+    """
+
     dimThresh  = kargs.pop("dimThresh", 4)
     M = len(front[0].fitness.wvalues)
 

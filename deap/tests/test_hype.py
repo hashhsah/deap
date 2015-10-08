@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 from StringIO import StringIO
 import time
+import platform
 
 from deap.tools._hypervolume.hype import *
 from deap.tools.emo import sortLogNondominated
@@ -66,6 +67,7 @@ class TestHypE(unittest.TestCase):
         h2 = hypeIndicatorSampled(front, 2, ref)
         self.assertTrue( np.allclose(h1,h2,rtol=0.1,atol=1e-4))
 
+    @unittest.skipIf(platform.python_implementation() == "PyPy", "PyPy craches randomly on hypeIndicatorExact.")
     def testDTLZ2FrontKnown(self):
         for front,k,h0 in [(_pfDTLZ2_2, 1,  _hDTLZ2_2_1),
                           (_pfDTLZ2_2, 10, _hDTLZ2_2_10),
@@ -82,6 +84,7 @@ class TestHypE(unittest.TestCase):
             self.assertTrue(np.allclose(h0,h1,rtol=1e-3,atol=1e-5))
             self.assertTrue(np.allclose(h0,h2,rtol=1e-3,atol=1e-3))
 
+    @unittest.skipIf(platform.python_implementation() == "PyPy", "PyPy craches randomly on hypeIndicatorExact.")
     def testDTLZ2FrontRandom(self):
         for M,N in [(2,20), (2, 100), (3,20), (3, 100), (4, 20), (5, 20)]:
             for k in [1,2,10]:
@@ -93,6 +96,7 @@ class TestHypE(unittest.TestCase):
 
                 self.assertTrue(np.allclose(h1,h2,rtol=1e-3,atol=1e-3))
 
+    @unittest.skipIf(platform.python_implementation() == "PyPy", "PyPy being ridiculously slow on hypeIndicatorSampled.")
     def testSampledSpeed(self):
 
         for M,N in [(2,20), (2, 100), (3,100), (5, 100), (10, 100), (20, 100)]:
